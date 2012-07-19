@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use strict;
 use File::Slurp;
+# THIS IS FOR ITERATING THROUGH A CONFIG FILE TO FIND A MEMCACHE ARRAY,
+# THEN REMOVING A HOST FROM THE ARRAY AND RENUMBERING THE OTHER MEMBERS
 
 my $hostToRemove = "10.10.5.54";
 my $fileAsString = read_file("w3-total-cache-config-ticketfly.com.php");
@@ -9,20 +11,16 @@ open(FILE, ">outfiletest") || die "Ouch, dead! Cannae open file\n";
 my @outfileText;
 
 sub extractMemcacheSection {
-    print "BOOP!\n";
     my $txt = shift;
     if ($txt =~ m/(.*?)(\'[a-z]+\.memcached\.servers\' => array\(.*?\),)(.*)/sm) {
-        print "MATCJED! $2\n";
         push(@outfileText,$1);
         my $cleanMemcacheArray = removeHost($2);
-        print "CLEAN\n$cleanMemcacheArray\n";
         push(@outfileText,$cleanMemcacheArray);
         if (length($3) > 0) {
             extractMemcacheSection($3);
         }
     } else {
         push(@outfileText,$txt);
-        ##print "FINISHED - NO MORE MATCH LAST SECTION \n $txt";
     }
 }
 
@@ -46,6 +44,5 @@ sub removeHost {
 }
 
 extractMemcacheSection($fileAsString);
-##print "@outfileText";
 print FILE @outfileText;
 close(FILE);
