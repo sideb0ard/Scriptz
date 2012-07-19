@@ -9,16 +9,22 @@ open(FILE, ">outfiletest") || die "Ouch, dead! Cannae open file\n";
 my @outfileText;
 
 sub extractMemcacheSection {
+    print "BOOP!\n";
     my $txt = shift;
     if ($txt =~ m/(.*)(memcached.servers\' => array\(.*?\))(.*)/sm) {
+        print "MATCJED! $2\n";
+        print FILE $1;
         push(@outfileText,$1);
         my $cleanMemcacheArray = removeHost($2);
+        print "CLEAN\n$cleanMemcacheArray\n";
+        print FILE $cleanMemcacheArray;
         push(@outfileText,$cleanMemcacheArray);
         if (length($3) > 0) {
             extractMemcacheSection($3);
         }
     } else {
         push(@outfileText,$txt);
+        print "FINISHED - NO MORE MATCH LAST SECTION \n $txt";
     }
 }
 
@@ -42,6 +48,6 @@ sub removeHost {
 }
 
 extractMemcacheSection($fileAsString);
-print "@outfileText";
+#print "@outfileText";
 print FILE @outfileText;
 close(FILE);
