@@ -11,20 +11,18 @@ my @outfileText;
 sub extractMemcacheSection {
     print "BOOP!\n";
     my $txt = shift;
-    if ($txt =~ m/(.*)(memcached.servers\' => array\(.*?\))(.*)/sm) {
+    if ($txt =~ m/(.*?)(\'[a-z]+\.memcached\.servers\' => array\(.*?\),)(.*)/sm) {
         print "MATCJED! $2\n";
-        print FILE $1;
         push(@outfileText,$1);
         my $cleanMemcacheArray = removeHost($2);
         print "CLEAN\n$cleanMemcacheArray\n";
-        print FILE $cleanMemcacheArray;
         push(@outfileText,$cleanMemcacheArray);
         if (length($3) > 0) {
             extractMemcacheSection($3);
         }
     } else {
         push(@outfileText,$txt);
-        print "FINISHED - NO MORE MATCH LAST SECTION \n $txt";
+        ##print "FINISHED - NO MORE MATCH LAST SECTION \n $txt";
     }
 }
 
@@ -33,7 +31,7 @@ sub removeHost {
     my @hosts;
     my @returnText;
     foreach my $line(@txtarray) {
-        if ($line =~ /^memcach.*/) { $line = $line . "\n"; push (@returnText,$line); }
+        if ($line =~ /memcach.*/) { $line = $line . "\n"; push (@returnText,$line); }
         if ($line =~ /(10.10.\d{1,3}.\d{1,3}:11211)/) {
             push(@hosts,$1);
         }
@@ -43,11 +41,11 @@ sub removeHost {
             my $line = "               $i => \'$newHosts[$i]\',\n";
             push (@returnText,$line);
     }
-    push(@returnText,"        )\n");
+    push(@returnText,"        ),");
     my $cleanedArray = join "", @returnText;
 }
 
 extractMemcacheSection($fileAsString);
-#print "@outfileText";
+##print "@outfileText";
 print FILE @outfileText;
 close(FILE);
