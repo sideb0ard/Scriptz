@@ -6,28 +6,42 @@ my $hostToRemove = "10.10.5.54";
 my $fileAsString = read_file("w3-total-cache-config-ticketfly.com.php");
 open(FILE, ">outfiletest") || die "Ouch, dead! Cannae open file\n";
 
+my @outfileText;
+
 sub extractMemcacheSection {
     my $txt = shift;
-    $txt =~ m/(.*)(memcached.servers\' => array\(.*?\))(.*)/sm;
-    print "$2\n";
-    removeHost($2);
-    if (length($3) > 0) {
-        extractMemcacheSection($2);
+    if ($txt =~ m/(.*)(memcached.servers\' => array\(.*?\))(.*)/sm) {
+        push(@outfileText,$1);
+        my $cleanMemcacheArray = removeHost($2);
+        push(@outfileText,$cleanMemcacheArray);
+        if (length($3) > 0) {
+            extractMemcacheSection($3);
+        }
+    } else {
+        push(@outfileText,$txt);
     }
 }
 
 sub removeHost {
     my @txtarray = split('\n', shift);
     my @hosts;
+    my @returnText;
     foreach my $line(@txtarray) {
+        if ($line =~ /^memcach.*/) { $line = $line . "\n"; push (@returnText,$line); }
         if ($line =~ /(10.10.\d{1,3}.\d{1,3}:11211)/) {
             push(@hosts,$1);
         }
     }
-    print "HOSTS:@hosts\n";
     my @newHosts = grep { !/$hostToRemove/ } @hosts;
-    print "NEWHOSTS:@newHosts\n";
+    for my $i (0 .. $#newHosts) {
+            my $line = "               $i => \'$newHosts[$i]\',\n";
+            push (@returnText,$line);
+    }
+    push(@returnText,"        )\n");
+    my $cleanedArray = join "", @returnText;
 }
 
 extractMemcacheSection($fileAsString);
+print "@outfileText";
+print FILE @outfileText;
 close(FILE);
