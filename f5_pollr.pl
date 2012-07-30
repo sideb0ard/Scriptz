@@ -25,17 +25,22 @@ my @http_requests = qw [ sysStatHttpRequests ];
 #########################
 # MEM USAGE - STATIC SINGLE MEASUREMENT
 my %mem_usage_results = &getSNMP(\@mem_use);
-#foreach my $k(keys %mem_usage_results) {
-#        print "$k = $mem_usage_results{$k}\n";
-#}
+foreach my $k(keys %mem_usage_results) {
+        # TODO _ CALL GMETRIC
+        print "$k = $mem_usage_results{$k}\n";
+}
 
 #########################
 # DYNAMIC MEASUREMENTS - NEED DELTA TO CALCULATE 
+my $start_time = time;
 my %active_connections_results_1 = &getSNMP(\@active_connections);
 my %new_connections_results_1 = &getSNMP(\@new_connections);
 my %throughput_rates_results_1 = &getSNMP(\@throughput_rates);
 my %http_requests_results_1 = &getSNMP(\@http_requests);
-sleep $step;
+my $finish_time = time;
+my $runtime = $finish_time - $start_time;
+print "Runtime $runtime\n";
+sleep ($step - $runtime);
 my %active_connections_results_2 = &getSNMP(\@active_connections);
 my %new_connections_results_2 = &getSNMP(\@new_connections);
 my %throughput_rates_results_2 = &getSNMP(\@throughput_rates);
@@ -43,15 +48,54 @@ my %http_requests_results_2 = &getSNMP(\@http_requests);
 
 foreach my $k(keys %active_connections_results_2) {
      print "$k = $active_connections_results_2{$k}\n";
+    # TODO _ CALL GMETRIC
 }
 
 # BUILD GMETRIC RETURN RESULTS #####
 ######
 # CONNECTIONS
-print "NUM1 - $new_connections_results_2{'sysTcpStatAccepts'},$new_connections_results_1{'sysTcpStatAccepts'} \n";
 my $new_connections_client_accepts = 
     &calcDelta($new_connections_results_2{'sysTcpStatAccepts'},$new_connections_results_1{'sysTcpStatAccepts'});
 print "NEW CONNECTIONS / CLIENT ACCEPTS : $new_connections_client_accepts/s\n";
+my $new_connections_server_connects = 
+    &calcDelta($new_connections_results_2{'sysStatServerTotConns'},$new_connections_results_1{'sysStatServerTotConns'});
+print "NEW CONNECTIONS / SERVER CONNECTS : $new_connections_server_connects/s\n";
+my $total_new_connections_client_connects = 
+    &calcDelta($new_connections_results_2{'sysStatClientTotConns'},$new_connections_results_1{'sysStatClientTotConns'});
+print "TOTAL NEW CONNECTIONS / CLIENT ACCEPTS : $total_new_connections_client_connects/s\n";
+my $total_new_connections_server_connects = 
+    &calcDelta($new_connections_results_2{'sysStatServerTotConns'},$new_connections_results_1{'sysStatServerTotConns'});
+print "TOTAL NEW CONNECTIONS / SERVER CONNECTS : $total_new_connections_server_connects/s\n";
+
+# THROUGHPUT RATES
+#foreach my $k(keys %throughput_rates_results_2) {
+#     print "$k = $throughput_rates_results_2{$k}\n";
+#}
+my $throughput_client_bits = 
+    ((($throughput_rates_results_2{'sysStatClientBytesIn'} - $throughput_rates_results_1{'sysStatClientBytesIn'}) +
+    ($throughput_rates_results_2{'sysStatClientBytesOut'} - $throughput_rates_results_1{'sysStatClientBytesOut'})) * 8) / $step;
+print "THROUGHPUT CLIENT BITS: $throughput_client_bits/s\n";
+# TODO _ CALL GMETRIC
+my $throughput_server_bits = 
+    ((($throughput_rates_results_2{'sysStatServerBytesIn'} - $throughput_rates_results_1{'sysStatServerBytesIn'}) +
+    ($throughput_rates_results_2{'sysStatServerBytesOut'} - $throughput_rates_results_1{'sysStatServerBytesOut'})) * 8) / $step;
+print "THROUGHPUT SERVER BITS: $throughput_server_bits/s\n";
+# TODO _ CALL GMETRIC
+my $throughput_compression = 
+    (($throughput_rates_results_2{'sysHttpStatPrecompressBytes'} - $throughput_rates_results_1{'sysHttpStatPrecompressBytes'}) * 8) / $step;
+print "THROUGHPUT COMPRESSION: $throughput_compression/s\n";
+# TODO _ CALL GMETRIC
+
+# HTTP REQUESTS
+#foreach my $k(keys %http_requests_results_2) {
+#    print "$k = $http_requests_results_2{$k}\n";
+#    }
+my $http_requests = 
+    ($http_requests_results_2{'sysStatHttpRequests'} - $http_requests_results_1{'sysStatHttpRequests'}) / $step;
+print "HTTP REQUESTS: $http_requests/s\n";
+# TODO _ CALL GMETRIC
+
+
 
 sub getSNMP {
     my ($aref) = @_;
