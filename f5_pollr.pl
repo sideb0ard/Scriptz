@@ -22,32 +22,36 @@ my @throughput_rates =
          sysHttpStatPrecompressBytes ];
 my @http_requests = qw [ sysStatHttpRequests ];
 
+
 #########################
-# MEM USAGE - STATIC SINGLE MEASUREMENT
+my $start_time = time;
+
+# DYNAMIC MEASUREMENTS - NEED DELTA TO CALCULATE  - STEP ONE
+my %new_connections_results_1 = &getSNMP(\@new_connections);
+my %throughput_rates_results_1 = &getSNMP(\@throughput_rates);
+my %http_requests_results_1 = &getSNMP(\@http_requests);
+
+my $finish_time = time;
+my $runtime = $finish_time - $start_time;
+print "Runtime $runtime\n";
+sleep ($step - $runtime);
+
+# DYNAMIC - COLLECT ONCE ABOVE AND
+my %new_connections_results_2 = &getSNMP(\@new_connections);
+my %throughput_rates_results_2 = &getSNMP(\@throughput_rates);
+my %http_requests_results_2 = &getSNMP(\@http_requests);
+
+# STATIC - ONLY COLLECT ONCE
 my %mem_usage_results = &getSNMP(\@mem_use);
+my %active_connections_results = &getSNMP(\@active_connections);
+
 foreach my $k(keys %mem_usage_results) {
         # TODO _ CALL GMETRIC
         print "$k = $mem_usage_results{$k}\n";
 }
 
-#########################
-# DYNAMIC MEASUREMENTS - NEED DELTA TO CALCULATE 
-my $start_time = time;
-my %active_connections_results_1 = &getSNMP(\@active_connections);
-my %new_connections_results_1 = &getSNMP(\@new_connections);
-my %throughput_rates_results_1 = &getSNMP(\@throughput_rates);
-my %http_requests_results_1 = &getSNMP(\@http_requests);
-my $finish_time = time;
-my $runtime = $finish_time - $start_time;
-print "Runtime $runtime\n";
-sleep ($step - $runtime);
-my %active_connections_results_2 = &getSNMP(\@active_connections);
-my %new_connections_results_2 = &getSNMP(\@new_connections);
-my %throughput_rates_results_2 = &getSNMP(\@throughput_rates);
-my %http_requests_results_2 = &getSNMP(\@http_requests);
-
-foreach my $k(keys %active_connections_results_2) {
-     print "$k = $active_connections_results_2{$k}\n";
+foreach my $k(keys %active_connections_results) {
+     print "$k = $active_connections_results{$k}\n";
     # TODO _ CALL GMETRIC
 }
 
