@@ -30,7 +30,7 @@ waitingroom = a.click(nextpage.link_with(:href => %r'WAITINGROOMURL'))
 waitingRoomCount = waitingroom.body.match(/id="waitingRoomCount">(\d+)/).captures
 inProcessCount = waitingroom.body.match(/id="inProcessCount">(\d+)/).captures
     
-puts "Waiting Room Count is " + waitingRoomCount.to_s + ". InProcess Count is " + inProcessCount.to_s
+#puts "Waiting Room Count is " + waitingRoomCount.to_s + ". InProcess Count is " + inProcessCount.to_s
 
 begin
     previousCountFile = File.open(countFile, "r")
@@ -40,10 +40,10 @@ begin
         previousCount = 0
     end
     previousCountFile.close
-    puts "Last result was " + previousCount.to_s
+    #puts "Last result was " + previousCount.to_s
 rescue Errno::ENOENT => e
     previousCount = 0
-    puts "No file - will use " + previousCount.to_s + " as previousCount"
+    #puts "No file - will use " + previousCount.to_s + " as previousCount"
 end    
 
 if previousCount.to_i == 0 and waitingRoomCount.to_s.to_i > 0
